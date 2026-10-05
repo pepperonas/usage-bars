@@ -41,8 +41,8 @@ test('one version everywhere: badge, plugin.json, package.json, CHANGELOG', () =
 test('CHANGELOG versions descend and carry valid dates', () => {
   const heads = [...read('CHANGELOG.md').matchAll(/^## \[(\d+)\.(\d+)\.(\d+)\] - (\d{4}-\d{2}-\d{2})$/gm)]
   assert.ok(heads.length >= 1)
-  const key = (h: RegExpMatchArray) => Number(h[1]) * 1e6 + Number(h[2]) * 1e3 + Number(h[3])
-  for (let i = 1; i < heads.length; i++) assert.ok(key(heads[i - 1]!) > key(heads[i]!), 'versions must descend')
+  const rank = (h: RegExpMatchArray) => Number(h[1]) * 1e6 + Number(h[2]) * 1e3 + Number(h[3])
+  for (let i = 1; i < heads.length; i++) assert.ok(rank(heads[i - 1]!) > rank(heads[i]!), 'versions must descend')
   for (const h of heads) assert.ok(!Number.isNaN(Date.parse(h[4]!)), `bad date ${h[4]}`)
 })
 
@@ -72,12 +72,12 @@ test('every style is documented and declared in /config', () => {
 })
 
 test('every /config field is in the README table, with its default', () => {
-  for (const [key, field] of Object.entries<{ default: unknown }>(manifest.userConfig)) {
-    const row = README.split('\n').find(l => l.startsWith(`| \`${key}\` |`))
-    assert.ok(row, `README configuration table misses ${key}`)
+  for (const [opt, field] of Object.entries<{ default: unknown }>(manifest.userConfig)) {
+    const row = README.split('\n').find(l => l.startsWith(`| \`${opt}\` |`))
+    assert.ok(row, `README configuration table misses ${opt}`)
     const d = field.default
     const shown = typeof d === 'boolean' ? (d ? 'on' : 'off') : `\`${d}\``
-    assert.ok(row.trimEnd().endsWith(`| ${shown} |`), `${key}: README default should be ${shown}`)
+    assert.ok(row.trimEnd().endsWith(`| ${shown} |`), `${opt}: README default should be ${shown}`)
   }
 })
 
@@ -142,10 +142,10 @@ test('no lockfile in the plugin root: Claude Code would install the dev tools fo
 
 test('userConfig carries only the fields the plugin directory accepts', () => {
   const allowed = new Set(['type', 'title', 'description', 'default', 'sensitive', 'required', 'multiple', 'min', 'max'])
-  for (const [key, field] of Object.entries<Record<string, unknown>>(manifest.userConfig)) {
-    for (const f of Object.keys(field)) assert.ok(allowed.has(f), `userConfig.${key}.${f} is refused by the directory`)
-    assert.ok(['string', 'number', 'boolean', 'directory', 'file'].includes(field.type as string), `userConfig.${key}.type`)
-    assert.ok(field.title && field.description, `userConfig.${key} needs title and description`)
+  for (const [opt, field] of Object.entries<Record<string, unknown>>(manifest.userConfig)) {
+    for (const f of Object.keys(field)) assert.ok(allowed.has(f), `userConfig.${opt}.${f} is refused by the directory`)
+    assert.ok(['string', 'number', 'boolean', 'directory', 'file'].includes(field.type as string), `userConfig.${opt}.type`)
+    assert.ok(field.title && field.description, `userConfig.${opt} needs title and description`)
   }
   assert.match(manifest.userConfig.mode.description, /full.*compact.*off/)
   for (const l of LANGS) assert.match(manifest.userConfig.language.description, new RegExp(`\\b${l}\\b`))

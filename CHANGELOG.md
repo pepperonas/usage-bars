@@ -7,7 +7,7 @@ All notable changes to this project are documented here. The format follows
 ## [0.3.3] - 2026-10-05
 
 ### Added
-- A listing icon (`.claude-plugin/icon.png`, 1024 px, drawn from `docs/icon.svg`): the 5h and 7d bars with their pace marks.
+- A listing icon for the plugin directory (1024 px, drawn from `docs/icon.svg`): the 5h and 7d bars with their pace marks.
 
 ### Changed
 - `style`, `mode` and `language` in `/config` are text fields instead of drop-downs: the Claude plugin
