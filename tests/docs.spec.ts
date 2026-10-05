@@ -15,6 +15,8 @@ const read = (p: string) => readFileSync(join(ROOT, p), 'utf8')
 const README = read('README.md')
 const manifest = JSON.parse(read('.claude-plugin/plugin.json'))
 const pkg = JSON.parse(read('package.json'))
+const market = JSON.parse(read('.claude-plugin/marketplace.json'))
+const lock = JSON.parse(read('package-lock.json'))
 const badge = (name: string) => README.match(new RegExp(`badge/${name}-([^-?]+)-`))?.[1]
 
 /** `test(` calls in a file; inside the per-surface loop each runs twice. */
@@ -32,6 +34,8 @@ test('one version everywhere: badge, plugin.json, package.json, CHANGELOG', () =
   const v = manifest.version
   assert.match(v, /^\d+\.\d+\.\d+$/)
   assert.equal(pkg.version, v)
+  assert.equal(lock.version, v)
+  assert.equal(lock.packages[''].version, v)
   assert.equal(badge('version'), v)
   assert.ok(read('CHANGELOG.md').includes(`## [${v}] - `), `CHANGELOG has no section for ${v}`)
   assert.ok(README.includes(`- **${v}** —`), `README changelog summary misses ${v}`)
@@ -115,4 +119,20 @@ test('no runtime dependencies — the badge says so', () => {
 test('every sound the mod plays ships with it', () => {
   const src = read('hooks/register.tsx')
   for (const [, asset] of src.matchAll(/'(sounds\/[^']+)'/g)) assert.ok(existsSync(join(ROOT, asset!)), `missing ${asset}`)
+})
+
+test('the marketplace lists this plugin, from this repo, at the same version', () => {
+  const entry = market.plugins.find((p: { name: string }) => p.name === manifest.name)
+  assert.ok(entry, `marketplace.json has no entry for ${manifest.name}`)
+  assert.equal(entry.source, './')
+  assert.equal(entry.version, manifest.version)
+  assert.equal(entry.description, manifest.description)
+})
+
+test('the README install commands name the real marketplace and plugin', () => {
+  const id = `${manifest.name}@${market.name}`
+  assert.ok(README.includes(`/plugin marketplace add pepperonas/${manifest.name}`), 'README misses marketplace add')
+  assert.ok(README.includes(`/plugin install ${id}`), `README misses /plugin install ${id}`)
+  assert.ok(README.includes(`claude plugin install ${id}`), `README misses claude plugin install ${id}`)
+  for (const m of README.matchAll(/usage-bars@([a-z0-9._-]+)/g)) assert.equal(m[1], market.name, `stale install id ${m[0]}`)
 })

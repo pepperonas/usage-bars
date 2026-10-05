@@ -12,10 +12,10 @@
   <a href="#-demo"><img alt="See it move" height="56" src="https://img.shields.io/badge/%F0%9F%8E%AC_Demo-see_it_move-7B4DFF?style=for-the-badge"></a>
 </p>
 
-<h3>👉 <code>git clone https://github.com/pepperonas/usage-bars ~/.claude/skills/usage-bars</code> — that's it.</h3>
+<h3>👉 <code>/plugin marketplace add pepperonas/usage-bars</code> · <code>/plugin install usage-bars@pepperonas</code> — that's it.</h3>
 
-[![version](https://img.shields.io/badge/version-0.3.0-7B4DFF?style=for-the-badge&logo=anthropic&logoColor=white)](CHANGELOG.md)
-[![node tests](https://img.shields.io/badge/node%20tests-49-2E9E5B?style=for-the-badge&logo=nodedotjs&logoColor=white)](tests)
+[![version](https://img.shields.io/badge/version-0.3.1-7B4DFF?style=for-the-badge&logo=anthropic&logoColor=white)](CHANGELOG.md)
+[![node tests](https://img.shields.io/badge/node%20tests-51-2E9E5B?style=for-the-badge&logo=nodedotjs&logoColor=white)](tests)
 [![engine tests](https://img.shields.io/badge/engine%20tests-32-2E9E5B?style=for-the-badge&logo=anthropic&logoColor=white)](hooks)
 [![lines of code](https://img.shields.io/badge/lines%20of%20code-0.9k-4B6BDF?style=for-the-badge&logo=typescript&logoColor=white)](hooks)
 
@@ -107,7 +107,25 @@
 - **Claude Code with mods** — mods are on by default in current releases; usage-bars is tested with **2.1.289**.
 - **A Claude subscription login** (Pro / Max / Team). The 5-hour and 7-day windows exist only there; with an API key Claude Code reports no rate-limit windows, and the line stays hidden.
 
-### Option 1 — skills folder (recommended)
+### Option 1 — marketplace (recommended)
+
+The repository is its own plugin marketplace. In Claude Code:
+
+```
+/plugin marketplace add pepperonas/usage-bars
+/plugin install usage-bars@pepperonas
+```
+
+or from the shell:
+
+```bash
+claude plugin marketplace add pepperonas/usage-bars
+claude plugin install usage-bars@pepperonas
+```
+
+The bars appear after the first answer — that's when Claude Code first learns your limits. Update with `/plugin marketplace update pepperonas`, then `claude plugin update usage-bars@pepperonas`. Settings: `/plugin configure usage-bars@pepperonas` (every option has a default, so you can skip it).
+
+### Option 2 — skills folder
 
 Claude Code loads a plugin it finds in `~/.claude/skills/<name>` by itself, in every session:
 
@@ -115,16 +133,16 @@ Claude Code loads a plugin it finds in `~/.claude/skills/<name>` by itself, in e
 git clone https://github.com/pepperonas/usage-bars ~/.claude/skills/usage-bars
 ```
 
-Start Claude Code. The bars appear after the first answer — that's when Claude Code first learns your limits. Update with `git -C ~/.claude/skills/usage-bars pull`.
+Update with `git -C ~/.claude/skills/usage-bars pull`. If you also install it from the marketplace, the marketplace copy wins and the skills-folder copy is not loaded.
 
-### Option 2 — one session
+### Option 3 — one session
 
 ```bash
 git clone https://github.com/pepperonas/usage-bars
 claude --plugin-dir ./usage-bars
 ```
 
-### Option 3 — desktop app and SDK hosts
+### Option 4 — desktop app and SDK hosts
 
 Where you can't pass a flag, name the folder in `CLAUDE_CODE_PLUGIN_DIRS` — in your shell environment or in the `env` block of `~/.claude/settings.json`:
 
@@ -236,6 +254,7 @@ npm run screenshots      # re-render docs/ (needs `npx playwright install chromi
 
 The full history is in [CHANGELOG.md](CHANGELOG.md) ([Keep a Changelog](https://keepachangelog.com/en/1.1.0/)).
 
+- **0.3.1** — installable from a plugin marketplace: `/plugin install usage-bars@pepperonas`.
 - **0.3.0** — English and German, a Node test suite with drift guards, rendered screenshots; the pace mark is a thin line on the fill.
 - **0.2.0** — animation, delta, pace, face, projection, reset party, toasts, six styles, `/usage-bars`.
 - **0.1.0** — two bars under the prompt.

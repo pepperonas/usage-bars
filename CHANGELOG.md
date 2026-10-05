@@ -4,6 +4,12 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project uses
 [Semantic Versioning](https://semver.org/).
 
+## [0.3.1] - 2026-10-05
+
+### Added
+- The repository is a plugin marketplace (`.claude-plugin/marketplace.json`):
+  `/plugin marketplace add pepperonas/usage-bars`, then `/plugin install usage-bars@pepperonas`.
+
 ## [0.3.0] - 2026-10-05
 
 ### Added
