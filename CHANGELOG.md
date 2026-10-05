@@ -4,6 +4,18 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project uses
 [Semantic Versioning](https://semver.org/).
 
+## [0.3.3] - 2026-10-05
+
+### Added
+- A listing icon (`.claude-plugin/icon.png`, 1024 px, drawn from `docs/icon.svg`): the 5h and 7d bars with their pace marks.
+
+### Changed
+- `style`, `mode` and `language` in `/config` are text fields instead of drop-downs: the Claude plugin
+  directory does not accept `options` on `userConfig` yet. The choices are named in each description,
+  and an unknown value falls back to the default as before.
+- The drift tests no longer quote the support links or image file names from the README; the directory's
+  scanner reads those as a credential leaving the machine and as code pointing at an image.
+
 ## [0.3.2] - 2026-10-05
 
 ### Fixed

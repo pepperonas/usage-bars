@@ -14,7 +14,7 @@
 
 <h3>👉 <code>/plugin marketplace add pepperonas/usage-bars</code> · <code>/plugin install usage-bars@pepperonas</code> — that's it.</h3>
 
-[![version](https://img.shields.io/badge/version-0.3.2-7B4DFF?style=for-the-badge&logo=anthropic&logoColor=white)](CHANGELOG.md)
+[![version](https://img.shields.io/badge/version-0.3.3-7B4DFF?style=for-the-badge&logo=anthropic&logoColor=white)](CHANGELOG.md)
 [![node tests](https://img.shields.io/badge/node%20tests-52-2E9E5B?style=for-the-badge&logo=nodedotjs&logoColor=white)](tests)
 [![engine tests](https://img.shields.io/badge/engine%20tests-32-2E9E5B?style=for-the-badge&logo=anthropic&logoColor=white)](hooks)
 [![lines of code](https://img.shields.io/badge/lines%20of%20code-0.9k-4B6BDF?style=for-the-badge&logo=typescript&logoColor=white)](hooks)
@@ -178,7 +178,7 @@ The defaults live in `/config` under **usage-bars**:
 | `toasts` | on / off | on |
 | `face` | on / off | on |
 
-What you set with `/usage-bars` is stored and wins over `/config` — so a quick `/usage-bars pacman` sticks across sessions.
+`style`, `mode` and `language` are typed in as text; a value the mod doesn't know falls back to the default. What you set with `/usage-bars` is stored and wins over `/config` — so a quick `/usage-bars pacman` sticks across sessions.
 
 ## 🧠 How it works
 
@@ -254,6 +254,7 @@ npm run screenshots      # re-render docs/ (needs `npx playwright install chromi
 
 The full history is in [CHANGELOG.md](CHANGELOG.md) ([Keep a Changelog](https://keepachangelog.com/en/1.1.0/)).
 
+- **0.3.3** — ready for the Claude plugin directory: a listing icon, and `/config` fields the directory accepts.
 - **0.3.2** — installs no dev tools for users (no lockfile in the plugin root).
 - **0.3.1** — installable from a plugin marketplace: `/plugin install usage-bars@pepperonas`.
 - **0.3.0** — English and German, a Node test suite with drift guards, rendered screenshots; the pace mark is a thin line on the fill.

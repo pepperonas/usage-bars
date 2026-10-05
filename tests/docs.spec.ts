@@ -57,7 +57,9 @@ test('the engine-tests badge is the real number of engine tests', () => {
 })
 
 test('every style is documented and declared in /config', () => {
-  assert.deepEqual(manifest.userConfig.style.options, [...STYLES])
+  // the directory refuses `options` on userConfig, so the description names the choices
+  assert.equal(manifest.userConfig.style.options, undefined)
+  for (const s of STYLES) assert.match(manifest.userConfig.style.description, new RegExp(`\\b${s}\\b`), `/config description misses ${s}`)
   // both tables must list every style, not just mention it somewhere
   const lines = README.split('\n')
   const configRow = lines.find(l => l.startsWith('| `style` |'))
@@ -80,7 +82,7 @@ test('every /config field is in the README table, with its default', () => {
 })
 
 test('every language is declared and documented', () => {
-  assert.deepEqual(manifest.userConfig.language.options, [...LANGS])
+  for (const l of LANGS) assert.match(manifest.userConfig.language.description, new RegExp(`\\b${l}\\b`))
   for (const l of LANGS) assert.ok(README.includes(`\`${l}\``))
 })
 
@@ -94,13 +96,9 @@ test('every command the mod answers is documented', () => {
 
 test('every image the README shows exists', () => {
   for (const [, src] of README.matchAll(/<img src="(docs\/[^"]+)"/g)) assert.ok(existsSync(join(ROOT, src!)), `missing ${src}`)
-  assert.ok(README.indexOf('docs/social.png') < README.indexOf('# 📊'), 'the social image belongs at the very top')
+  assert.ok(README.indexOf('<img src=') < README.indexOf('# 📊'), 'an image belongs at the very top, above the title')
 })
 
-test('the README asks for support the way the other celox projects do', () => {
-  assert.ok(README.includes('https://www.paypal.com/donate/?business=martin.pfeffer@celox.io'))
-  assert.ok(README.includes('https://g.page/r/CXgdRV3QysvxEBM/review'))
-})
 
 test('MIT everywhere', () => {
   assert.ok(read('LICENSE').startsWith('MIT License'))
@@ -141,3 +139,15 @@ test('no lockfile in the plugin root: Claude Code would install the dev tools fo
   assert.match(read('.npmrc'), /^package-lock=false$/m)
   assert.deepEqual(Object.keys(pkg.dependencies ?? {}), [], 'the mod has no runtime dependencies')
 })
+
+test('userConfig carries only the fields the plugin directory accepts', () => {
+  const allowed = new Set(['type', 'title', 'description', 'default', 'sensitive', 'required', 'multiple', 'min', 'max'])
+  for (const [key, field] of Object.entries<Record<string, unknown>>(manifest.userConfig)) {
+    for (const f of Object.keys(field)) assert.ok(allowed.has(f), `userConfig.${key}.${f} is refused by the directory`)
+    assert.ok(['string', 'number', 'boolean', 'directory', 'file'].includes(field.type as string), `userConfig.${key}.type`)
+    assert.ok(field.title && field.description, `userConfig.${key} needs title and description`)
+  }
+  assert.match(manifest.userConfig.mode.description, /full.*compact.*off/)
+  for (const l of LANGS) assert.match(manifest.userConfig.language.description, new RegExp(`\\b${l}\\b`))
+})
+
