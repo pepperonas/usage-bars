@@ -14,8 +14,8 @@
 
 <h3>👉 <code>/plugin marketplace add pepperonas/usage-bars</code> · <code>/plugin install usage-bars@pepperonas</code> — that's it.</h3>
 
-[![version](https://img.shields.io/badge/version-0.3.1-7B4DFF?style=for-the-badge&logo=anthropic&logoColor=white)](CHANGELOG.md)
-[![node tests](https://img.shields.io/badge/node%20tests-51-2E9E5B?style=for-the-badge&logo=nodedotjs&logoColor=white)](tests)
+[![version](https://img.shields.io/badge/version-0.3.2-7B4DFF?style=for-the-badge&logo=anthropic&logoColor=white)](CHANGELOG.md)
+[![node tests](https://img.shields.io/badge/node%20tests-52-2E9E5B?style=for-the-badge&logo=nodedotjs&logoColor=white)](tests)
 [![engine tests](https://img.shields.io/badge/engine%20tests-32-2E9E5B?style=for-the-badge&logo=anthropic&logoColor=white)](hooks)
 [![lines of code](https://img.shields.io/badge/lines%20of%20code-0.9k-4B6BDF?style=for-the-badge&logo=typescript&logoColor=white)](hooks)
 
@@ -222,14 +222,14 @@ Everything that decides *what* is drawn is pure and engine-free — which is why
 
 There are two suites, and the split is deliberate.
 
-**Node suite** — `tests/*.spec.ts`, plain `node:test`, no Claude Code needed; this is what CI runs. It covers the pure logic (countdown, pace, projection, history, every style at every value, the row in every state, both languages) and **drift guards** that hold this README to the code: the version badge to `plugin.json` and `package.json`, the test-count badges to the real number of tests, every style and command to the docs, every `/config` field to the table above, the CHANGELOG to the version.
+**Node suite** — `tests/*.spec.ts`, plain `node:test`, no Claude Code needed; this is what CI runs. It covers the pure logic (countdown, pace, projection, history, every style at every value, the row in every state, both languages) and **drift guards** that hold this README to the code: the version badge to `plugin.json` and `package.json`, the test-count badges to the real number of tests, every style and command to the docs, every `/config` field to the table above, the CHANGELOG to the version, the marketplace entry to the manifest, and that no lockfile ships (Claude Code would install the dev tools for every user).
 
 **Engine suite** — `hooks/*.test.ts(x)`, run by `claude plugin test .` against Claude Code's own engine: the line is drawn on the `terminal` *and* `desktop` surfaces, a measure makes the bar glide and the delta flash and fade, a threshold toasts exactly once, an idle reset drops to 0 with a party, `/usage-bars` switches mode, style, language and flags, and settings survive a new session.
 
 **Every new test is mutated once.** A test that has never been seen red is not an assurance. So each guarded behaviour gets its bug put back (reset detection off, threshold check removed, delta dropped, glide skipped, projection hidden, settings not stored, ease-out removed) and the suite must go red — seven of seven did.
 
 ```bash
-npm ci
+npm install              # dev tools only; the mod itself has no dependencies
 npm test                 # node suite (CI)
 claude plugin test .     # engine suite
 claude plugin validate . # what the module hooks and calls
@@ -254,6 +254,7 @@ npm run screenshots      # re-render docs/ (needs `npx playwright install chromi
 
 The full history is in [CHANGELOG.md](CHANGELOG.md) ([Keep a Changelog](https://keepachangelog.com/en/1.1.0/)).
 
+- **0.3.2** — installs no dev tools for users (no lockfile in the plugin root).
 - **0.3.1** — installable from a plugin marketplace: `/plugin install usage-bars@pepperonas`.
 - **0.3.0** — English and German, a Node test suite with drift guards, rendered screenshots; the pace mark is a thin line on the fill.
 - **0.2.0** — animation, delta, pace, face, projection, reset party, toasts, six styles, `/usage-bars`.

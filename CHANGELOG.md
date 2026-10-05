@@ -4,6 +4,13 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project uses
 [Semantic Versioning](https://semver.org/).
 
+## [0.3.2] - 2026-10-05
+
+### Fixed
+- A marketplace install no longer downloads 52 MB of dev tools (Playwright, tsx, TypeScript).
+  Claude Code installs a plugin's `package-lock.json` for every user; the mod needs none of it,
+  so the lockfile is no longer in the repository and `.npmrc` keeps npm from writing one.
+
 ## [0.3.1] - 2026-10-05
 
 ### Added

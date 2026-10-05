@@ -13,7 +13,7 @@
       "name": "usage-bars",
       "source": "./",
       "description": "Your Claude Code 5-hour and 7-day usage limits as animated bars under the prompt: percent, reset countdown, pace mark, projection, per-answer delta, styles (Pac-Man, beer, tank, battery, hourglass)",
-      "version": "0.3.1",
+      "version": "0.3.2",
       "author": { "name": "Martin Pfeffer", "url": "https://celox.io" },
       "homepage": "https://github.com/pepperonas/usage-bars",
       "license": "MIT",
