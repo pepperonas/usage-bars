@@ -14,9 +14,9 @@
 
 <h3>👉 <code>/plugin marketplace add pepperonas/usage-bars</code> · <code>/plugin install usage-bars@pepperonas</code> — that's it.</h3>
 
-[![version](https://img.shields.io/badge/version-0.3.3-7B4DFF?style=for-the-badge&logo=anthropic&logoColor=white)](CHANGELOG.md)
-[![node tests](https://img.shields.io/badge/node%20tests-52-2E9E5B?style=for-the-badge&logo=nodedotjs&logoColor=white)](tests)
-[![engine tests](https://img.shields.io/badge/engine%20tests-32-2E9E5B?style=for-the-badge&logo=anthropic&logoColor=white)](hooks)
+[![version](https://img.shields.io/badge/version-0.4.0-7B4DFF?style=for-the-badge&logo=anthropic&logoColor=white)](CHANGELOG.md)
+[![node tests](https://img.shields.io/badge/node%20tests-60-2E9E5B?style=for-the-badge&logo=nodedotjs&logoColor=white)](tests)
+[![engine tests](https://img.shields.io/badge/engine%20tests-35-2E9E5B?style=for-the-badge&logo=anthropic&logoColor=white)](hooks)
 [![lines of code](https://img.shields.io/badge/lines%20of%20code-0.9k-4B6BDF?style=for-the-badge&logo=typescript&logoColor=white)](hooks)
 
 [![CI](https://img.shields.io/github/actions/workflow/status/pepperonas/usage-bars/ci.yml?branch=main&label=CI&logo=github)](https://github.com/pepperonas/usage-bars/actions/workflows/ci.yml)
@@ -98,6 +98,7 @@
 - **Compact mode** — `5h 42% 😎 ↻2h13m   7d 67% 😬 ↻3d 4h`; automatic below 72 columns.
 - **Stats** — `/usage-bars stats`: burn rate, projection, sparklines of your 5-hour peaks over 24 h and 7 days, your record.
 - **English and German** — `/usage-bars lang de`.
+- **Shows what may follow** — type `/usage-bars ` and the line under the prompt lists the subcommands, narrowing as you type (`st` → **st**ats · **st**yle), with what a single match does. Claude Code completes a command's name but not its arguments, so the mod shows them itself.
 - **Respects your settings** — everything animated can be switched off (`/usage-bars anim off`), sound is off by default.
 
 ## 📥 Install
@@ -162,7 +163,7 @@ Where you can't pass a flag, name the folder in `CLAUDE_CODE_PLUGIN_DIRS` — in
 | `/usage-bars lang en` · `de` | Language of the line, toasts and commands |
 | `/usage-bars anim` · `sound` · `toasts` · `face` `[on\|off]` | Switches; without `on`/`off` they toggle |
 
-The command runs immediately, even while Claude is working.
+The command runs immediately, even while Claude is working. While you type it, the line under the prompt lists what may follow — after `style ` the styles, after `lang ` the languages, after a switch `on · off`. It's a list to read, not Tab completion: Claude Code doesn't let a mod complete arguments.
 
 ## ⚙️ Configuration
 
@@ -254,6 +255,7 @@ npm run screenshots      # re-render docs/ (needs `npx playwright install chromi
 
 The full history is in [CHANGELOG.md](CHANGELOG.md) ([Keep a Changelog](https://keepachangelog.com/en/1.1.0/)).
 
+- **0.4.0** — typing `/usage-bars ` lists what may follow, under the prompt.
 - **0.3.3** — ready for the Claude plugin directory: a listing icon, and `/config` fields the directory accepts.
 - **0.3.2** — installs no dev tools for users (no lockfile in the plugin root).
 - **0.3.1** — installable from a plugin marketplace: `/plugin install usage-bars@pepperonas`.

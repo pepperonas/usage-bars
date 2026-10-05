@@ -4,6 +4,15 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project uses
 [Semantic Versioning](https://semver.org/).
 
+## [0.4.0] - 2026-10-05
+
+### Added
+- While the prompt holds `/usage-bars …`, the line under it lists what may follow instead of the bars:
+  the subcommands, then the styles after `style`, the languages after `lang`, `on · off` after a switch.
+  The typed part is highlighted, and a single match says what it does. Claude Code completes a slash
+  command's name but not its arguments, and Tab can't be taken over, so this is a list to read.
+  Only `/usage-bars` drafts redraw the line; typing a normal prompt costs nothing.
+
 ## [0.3.3] - 2026-10-05
 
 ### Added

@@ -25,6 +25,7 @@ import { STYLES } from './styles'
 import type { Seg } from './styles'
 import { detailText, label, rowSegs } from './row'
 import { LANGS, T, num1 } from './i18n'
+import { complete, isOurs } from './complete'
 
 const limitsA = atom({ plugin: 'usage-bars', key: 'limits' } as const, [] as Limit[])
 const motionA = atom({ plugin: 'usage-bars', key: 'motion' } as const, {} as Record<string, Motion>)
@@ -44,6 +45,16 @@ const prefsA = atom({ plugin: 'usage-bars', key: 'prefs' } as const, {
 const MODES: readonly Mode[] = ['full', 'compact', 'off']
 const FLAGS = ['animation', 'sound', 'toasts', 'face'] as const
 type Flag = (typeof FLAGS)[number]
+
+/** Whether the line is listing `/usage-bars` arguments right now. */
+let listing = false
+
+/** Redraw for a draft that is `/usage-bars …`, or that just stopped being one. */
+function redrawIfOurs($: EngineInterface, text: string): void {
+  const ours = isOurs(text)
+  if (ours || listing) $.ui.invalidate('ui.render')
+  listing = ours
+}
 
 const keep = (list: readonly Limit[]): Limit[] =>
   list.map(({ kind, percentUsed, resetsAt }) => ({ kind, percentUsed, resetsAt }))
@@ -306,8 +317,45 @@ export const register: Register = (on, options) => {
     }
   })
 
+  // Claude Code completes the command's name, not its arguments, so the line
+  // under the prompt lists what may follow while the draft is `/usage-bars …`.
+  // Only such drafts redraw: typing a normal prompt costs nothing.
+  on('prompt.edit', async ($, e, next) => {
+    const r = await next(e)
+    redrawIfOurs($, r.text)
+    return r
+  })
+  on('prompt.submit', async ($, e, next) => {
+    const r = await next(e)
+    redrawIfOurs($, '')
+    return r
+  })
+
   on('ui.render', { component: 'PromptHint' }, async ($, e, next) => {
     const prefs = await read($, prefsA)
+    // A surface without a prompt box (or a read that fails) just shows the bars.
+    const draft = (await $.prompt.read().catch(() => undefined))?.text ?? ''
+    const options = complete(draft, prefs.lang)
+    if (options) {
+      const { Box, Text } = $.ui.resolve(e)
+      const one = options.length === 1 ? options[0] : undefined
+      return (
+        <Box flexDirection="column">
+          {await next(e)}
+          <Box key="usage-bars-complete" flexDirection="row">
+            <Text dimColor>{'⌨ '}</Text>
+            {options.map((o, i) => (
+              <Text key={o.word} wrap="truncate-end">
+                {i > 0 ? <Text dimColor>{' · '}</Text> : null}
+                <Text bold color="#79c0ff">{o.word.slice(0, o.typed)}</Text>
+                <Text color="#e6edf3">{o.word.slice(o.typed)}</Text>
+              </Text>
+            ))}
+            {one ? <Text dimColor wrap="truncate-end">{`  — ${one.hint}`}</Text> : null}
+          </Box>
+        </Box>
+      )
+    }
     if (prefs.mode === 'off') return next(e)
     const list = await read($, limitsA)
     const shown = WINDOWS.filter(w => pick(list, w.kind))

@@ -213,3 +213,38 @@ test('/usage-bars lang switches the language and keeps it', async ($, on) => {
   await measure($, [{ kind: 'five_hour', percentUsed: 100, resetsAt: iso(H) }])
   expect(await all(ui)).toContain('weiter in')
 })
+
+for (const surface of ['terminal', 'desktop'] as const) {
+  test(`typing /usage-bars lists what may follow, in place of the bars (${surface})`, async ($, on) => {
+    engine(on)
+    let draft = ''
+    on('prompt.read', () => ({ value: { text: draft, cursor: draft.length } }))
+    await measure($, [{ kind: 'five_hour', percentUsed: 42 }])
+    expect(await all(await mount($, surface))).toContain('42%')
+
+    draft = '/usage-bars st'
+    let t = await all(await mount($, surface))
+    expect(t).toContain('st|ats')
+    expect(t).toContain('st|yle')
+    expect(t).not.toContain('42%')
+    expect(t).toContain('? for shortcuts')
+
+    draft = '/usage-bars stats'
+    expect(await all(await mount($, surface))).toContain('rate, projection, history, record')
+
+    draft = '/usage-bars stats '
+    t = await all(await mount($, surface))
+    expect(t).toContain('42%')
+    expect(t).not.toContain('⌨')
+  })
+}
+
+test('the list shows even with the line off and before any data, in the chosen language', { options: { language: 'de' } } as never, async ($: any, on: any) => {
+  engine(on)
+  on('prompt.read', () => ({ value: { text: '/usage-bars sta', cursor: 15 } }))
+  await start($)
+  await $.command.run({ command: 'usage-bars', args: 'off' } as never)
+  const t = await all(await mount($, 'terminal'))
+  expect(t).toContain('sta|ts')
+  expect(t).toContain('Rate, Hochrechnung')
+})
