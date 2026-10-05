@@ -1,0 +1,83 @@
+{
+  "name": "usage-bars",
+  "version": "0.3.0",
+  "description": "Your Claude Code 5-hour and 7-day usage limits as animated bars under the prompt: percent, reset countdown, pace mark, projection, per-answer delta, styles (Pac-Man, beer, tank, battery, hourglass)",
+  "types": "./types/index.d.ts",
+  "userConfig": {
+    "style": {
+      "type": "string",
+      "title": "Style",
+      "description": "How the bars look (switch any time with /usage-bars style)",
+      "options": [
+        "bars",
+        "pacman",
+        "beer",
+        "tank",
+        "battery",
+        "hourglass"
+      ],
+      "default": "bars"
+    },
+    "mode": {
+      "type": "string",
+      "title": "Display",
+      "description": "full: bars · compact: numbers only · off: hidden",
+      "options": [
+        "full",
+        "compact",
+        "off"
+      ],
+      "default": "full"
+    },
+    "language": {
+      "type": "string",
+      "title": "Language",
+      "description": "Language of the line, toasts and commands",
+      "options": [
+        "en",
+        "de"
+      ],
+      "default": "en"
+    },
+    "animation": {
+      "type": "boolean",
+      "title": "Animation",
+      "description": "Gliding bars, delta flash, reset sparkle; off = a calm, static line",
+      "default": true
+    },
+    "sound": {
+      "type": "boolean",
+      "title": "Sound",
+      "description": "A chime at 90/100 % and on reset",
+      "default": false
+    },
+    "toasts": {
+      "type": "boolean",
+      "title": "Toasts",
+      "description": "A toast at 50/80/90/100 %, once per window",
+      "default": true
+    },
+    "face": {
+      "type": "boolean",
+      "title": "Face",
+      "description": "An emoji that follows your pace",
+      "default": true
+    }
+  },
+  "author": {
+    "name": "Martin Pfeffer",
+    "email": "martin.pfeffer@celox.io",
+    "url": "https://celox.io"
+  },
+  "homepage": "https://github.com/pepperonas/usage-bars",
+  "repository": "https://github.com/pepperonas/usage-bars",
+  "license": "MIT",
+  "keywords": [
+    "mod",
+    "function-hooks",
+    "ui",
+    "usage",
+    "rate-limits",
+    "status"
+  ]
+}

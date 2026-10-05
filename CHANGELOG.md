@@ -1,0 +1,36 @@
+# Changelog
+
+All notable changes to this project are documented here. The format follows
+[Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project uses
+[Semantic Versioning](https://semver.org/).
+
+## [0.3.0] - 2026-10-05
+
+### Added
+- English and German (`/usage-bars lang en|de`, `language` in `/config`); English is the default.
+- A Node test suite (`npm test`) that runs without Claude Code, plus drift guards that hold the README to the code.
+- README images rendered from the mod's own renderer (`npm run screenshots`).
+
+### Fixed
+- The pace mark inside a filled bar is a thin line on the fill colour instead of a white block.
+- Beer and battery draw their empty part, so the end of the bar is visible.
+- Pac-Man leaves a faint trail instead of a gap that looked like a rendering error.
+- Command output no longer repeats the plugin name (`usage-bars: usage-bars: …`).
+- Missing hours in the sparkline show as `·` instead of a hole.
+
+## [0.2.0] - 2026-10-05
+
+### Added
+- Bars glide to new values (eighth-block resolution, green → red gradient).
+- `+3%` delta after each answer, fading out.
+- Pace mark, a face that follows your pace, and a projection that warns when a window runs dry before its reset.
+- Local reset detection with a sparkle; a quip at 100 %.
+- Toasts at 50/80/90/100 % (once per window), optional sound.
+- Styles: `bars`, `pacman`, `beer`, `tank`, `battery`, `hourglass`.
+- `/usage-bars` command: `stats`, `demo`, `full|compact|off`, `style`, flags.
+- History across sessions (sparklines, record) and a hover card with details.
+
+## [0.1.0] - 2026-10-05
+
+### Added
+- Two bars under the prompt: the 5-hour and the 7-day window, with percent and time until reset.
