@@ -77,6 +77,23 @@ test('detailText names reset, rate and a sparkline', () => {
   assert.ok(t.includes('24h '))
 })
 
+test('each window sparkline shows its own level, the 7d one too', () => {
+  const t = detailText(
+    [{ kind: 'five_hour', percentUsed: 20, resetsAt: iso(NOW + H) }, { kind: 'seven_day', percentUsed: 92, resetsAt: iso(NOW + 80 * H) }],
+    { five_hour: [[NOW - 2 * H, 10]], seven_day: [[NOW - 2 * 86400_000, 60]] },
+    NOW,
+  )
+  // 7d: 60 % two days ago, 92 % now; the 5h figures stay out of it
+  assert.ok(t.includes('7d ····▅·▇'), t)
+  // 5h: 10 % two hours back, nothing in between, 20 % now
+  assert.ok(t.includes('24h ·····················▂·▂'), t)
+})
+
+test('the current reading fills the newest bucket without a sample this hour', () => {
+  const t = detailText([{ kind: 'five_hour', percentUsed: 100, resetsAt: iso(NOW + H) }], {}, NOW)
+  assert.ok(t.endsWith('·█'), t)
+})
+
 test('German: the line and the card switch language', () => {
   const de = { ...prefs, lang: 'de' as const }
   assert.ok(row({ prefs: de, limit: { kind: 'five_hour', percentUsed: 100, resetsAt: iso(NOW + H) } }).includes('weiter in 1h00m'))

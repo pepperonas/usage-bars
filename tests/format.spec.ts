@@ -2,7 +2,7 @@ import { test } from 'node:test'
 import assert from 'node:assert/strict'
 
 import {
-  appendSample, barWidth, clockTime, elapsed, face, filled, glide, paceRatio, peaks, quip, rate, reached, runsDryAt, spark, tone, untilReset,
+  appendSample, barWidth, heartbeat, clockTime, elapsed, face, filled, glide, paceRatio, peaks, quip, rate, reached, runsDryAt, spark, tone, untilReset,
 } from '../hooks/format.ts'
 
 const H = 3600_000
@@ -111,6 +111,18 @@ test('appendSample caps the history at 3000 samples', () => {
   let h = {}
   for (let i = 0; i < 3100; i++) h = appendSample(h, 'five_hour', [i * 60_000, i % 100], 3100 * 60_000)
   assert.equal((h as Record<string, unknown[]>).five_hour!.length, 3000)
+})
+
+test('heartbeat records a steady reading again after its interval, and only then', () => {
+  const h = { five_hour: [[0, 10]] as [number, number][] }
+  const lims = [{ kind: 'five_hour', percentUsed: 10 }, { kind: 'seven_day', percentUsed: 90 }]
+  const soon = heartbeat({ ...h, seven_day: [[0, 90]] }, lims, 9 * 60_000, 10 * 60_000)
+  assert.deepEqual(soon.five_hour, [[0, 10]])
+  const due = heartbeat(h, lims, 10 * 60_000, 10 * 60_000)
+  assert.deepEqual(due.five_hour, [[0, 10], [600_000, 10]])
+  assert.deepEqual(due.seven_day, [[600_000, 90]])
+  const same = { five_hour: [[0, 10]] as [number, number][] }
+  assert.equal(heartbeat(same, [], 10 * H), same)
 })
 
 test('spark and peaks', () => {

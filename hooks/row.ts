@@ -1,4 +1,4 @@
-import type { Delta, History, Lang, Limit, Motion, Prefs } from '../types'
+import type { Delta, History, Lang, Limit, Motion, Prefs, Sample } from '../types'
 import {
   DELTA_MS,
   PARTY_MS,
@@ -88,16 +88,23 @@ export function rowSegs(i: RowInput): Seg[] {
   return out
 }
 
-/** The hover card: reset time, burn rate and a sparkline per window. */
+/**
+ * The hover card: reset time, burn rate and a sparkline per window.
+ *
+ * Each window's sparkline shows that window's own level (the 5h one per hour
+ * over 24 hours, the 7d one per day over 7 days), with the current reading as
+ * the newest sample: it is known even when no sample was taken this hour.
+ */
 export function detailText(limits: readonly Limit[], history: History, now: number, lang: Lang = 'en'): string {
   return limits
     .map(l => {
       const r = rate(history[l.kind], l.kind, l.resetsAt, l.percentUsed, now)
       const at = l.resetsAt ? Date.parse(l.resetsAt) : NaN
+      const own = [...(history[l.kind] ?? []), [now, l.percentUsed] as Sample]
       const sp =
         l.kind === 'five_hour'
-          ? `24h ${spark(peaks(history.five_hour, now, 3600_000, 24))}`
-          : `7${T[lang].day} ${spark(peaks(history.five_hour, now, 86400_000, 7))}`
+          ? `24h ${spark(peaks(own, now, 3600_000, 24))}`
+          : `7${T[lang].day} ${spark(peaks(own, now, 86400_000, 7))}`
       const reset = Number.isNaN(at) ? T[lang].resetOpen : T[lang].resetAt(clockTime(at, now, lang))
       return `${label(l.kind)}: ${reset}${r ? ` · ${num1(r.perHour, lang)} %/h` : ''} · ${sp}`
     })

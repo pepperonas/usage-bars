@@ -122,7 +122,12 @@ async function main() {
   }
   // inside the current window, the same samples the line above uses
   const history = [...week.filter(([t]) => t < NOW - 3 * H), [NOW - H, 31]] as [number, number][]
-  const card = detailText([{ ...FIVE, percentUsed: 71 }, SEVEN], { five_hour: history }, NOW)
+  // the 7-day level: the previous window filled to 85 %, the current one climbs to 67 %
+  const start = Date.parse(SEVEN.resetsAt!) - 7 * 24 * H
+  const seven: [number, number][] = week.map(([t]) =>
+    t < start ? [t, Math.round(40 + (45 * (t - (start - 7 * 24 * H))) / (7 * 24 * H))] : [t, Math.round((SEVEN.percentUsed * (t - start)) / (NOW - start))],
+  )
+  const card = detailText([{ ...FIVE, percentUsed: 71 }, SEVEN], { five_hour: history, seven_day: seven }, NOW)
   await shoot('hover', frame('mouse over the line', `<div class="cap">the line</div>  ${pair({ limit: { ...FIVE, percentUsed: 71 }, history: hist }, { limit: SEVEN })}\n<div class="cap">hovered</div>  <span class="card">${esc(card)}</span>`))
 
   // Animated demo: an answer arrives, the bar glides, +3% flashes and fades;

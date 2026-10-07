@@ -14,9 +14,9 @@
 
 <h3>👉 <code>/plugin marketplace add pepperonas/usage-bars</code> · <code>/plugin install usage-bars@pepperonas</code> — that's it.</h3>
 
-[![version](https://img.shields.io/badge/version-0.4.1-7B4DFF?style=for-the-badge&logo=anthropic&logoColor=white)](CHANGELOG.md)
-[![node tests](https://img.shields.io/badge/node%20tests-70-2E9E5B?style=for-the-badge&logo=nodedotjs&logoColor=white)](tests)
-[![engine tests](https://img.shields.io/badge/engine%20tests-40-2E9E5B?style=for-the-badge&logo=anthropic&logoColor=white)](hooks)
+[![version](https://img.shields.io/badge/version-0.4.2-7B4DFF?style=for-the-badge&logo=anthropic&logoColor=white)](CHANGELOG.md)
+[![node tests](https://img.shields.io/badge/node%20tests-73-2E9E5B?style=for-the-badge&logo=nodedotjs&logoColor=white)](tests)
+[![engine tests](https://img.shields.io/badge/engine%20tests-41-2E9E5B?style=for-the-badge&logo=anthropic&logoColor=white)](hooks)
 [![lines of code](https://img.shields.io/badge/lines%20of%20code-0.9k-4B6BDF?style=for-the-badge&logo=typescript&logoColor=white)](hooks)
 
 [![CI](https://img.shields.io/github/actions/workflow/status/pepperonas/usage-bars/ci.yml?branch=main&label=CI&logo=github)](https://github.com/pepperonas/usage-bars/actions/workflows/ci.yml)
@@ -76,9 +76,9 @@
 
 ### Hover card
 
-<img src="docs/hover.png" alt="Hovering the line shows reset times, burn rate in %/h and sparklines of the 5-hour peaks" width="100%">
+<img src="docs/hover.png" alt="Hovering the line shows reset times, burn rate in %/h and a sparkline of each window" width="100%">
 
-<sub>Point at the line for reset times, your burn rate and sparklines of the last 24 hours and 7 days — where the surface reports the pointer (the desktop app; terminals that pass mouse movement).</sub>
+<sub>Point at the line for reset times, your burn rate and a sparkline per window — the 5-hour level per hour over 24 hours, the 7-day level per day over 7 days — where the surface reports the pointer (the desktop app; terminals that pass mouse movement).</sub>
 
 <sub>Every image above is rendered from the mod's own renderer (<code>hooks/row.ts</code>, <code>hooks/styles.ts</code>) by <code>npm run screenshots</code> — not drawn by hand.</sub>
 
@@ -200,7 +200,7 @@ The defaults live in `/config` under **usage-bars**:
 - **Drawing.** A `ui.render` hook on the `PromptHint` component returns the engine's own hint line *plus* one row — the shortcuts and pills keep working.
 - **Pace.** `elapsed = 1 − (resetsAt − now) / window`; the mark sits at that share of the bar, and `used / elapsed` picks the face.
 - **Projection.** Burn rate = rise since the first sample *inside the current window* ÷ time; it needs 10 minutes of samples and a rising value. Samples from the previous window never count.
-- **History.** Up to 3000 samples, 8 days, in `$.store` — that's what the sparklines, the record and the once-per-window toasts are built on.
+- **History.** Up to 3000 samples, 8 days, in `$.store` — that's what the sparklines, the record and the once-per-window toasts are built on. A reading only arrives when a window moves, so the ticker records a steady value again every 10 minutes; a `·` in a sparkline then really means no session was running.
 
 ### 🔒 Privacy
 
@@ -259,6 +259,7 @@ npm run screenshots      # re-render docs/ (needs `npx playwright install chromi
 
 The full history is in [CHANGELOG.md](CHANGELOG.md) ([Keep a Changelog](https://keepachangelog.com/en/1.1.0/)).
 
+- **0.4.2** — the 7-day sparkline shows the 7-day level, and steady hours no longer show as gaps.
 - **0.4.1** — every session shows the same, current figures; an idle one no longer shows old numbers or a 0 % window.
 - **0.4.0** — typing `/usage-bars ` lists what may follow, under the prompt.
 - **0.3.3** — ready for the Claude plugin directory: a listing icon, and `/config` fields the directory accepts.

@@ -180,6 +180,15 @@ test('the shared history keeps the samples other sessions recorded', async ($, o
   expect((disk.history as any).five_hour).toEqual([[-60_000, 10], [0, 20]])
 })
 
+test('a steady reading is sampled again every 10 minutes', async ($, on) => {
+  const disk: Record<string, unknown> = {}
+  const { clock } = engine(on, [], disk)
+  await start($)
+  await measure($, [{ kind: 'seven_day', percentUsed: 92, resetsAt: iso(80 * H) }])
+  for (let i = 0; i < 11; i++) await clock.advance(60_000)
+  expect((disk.history as any).seven_day.length).toBe(2)
+})
+
 test('at 100 % a quip replaces the bar', async ($, on) => {
   engine(on)
   await measure($, [{ kind: 'five_hour', percentUsed: 100, resetsAt: iso(H) }])

@@ -137,6 +137,25 @@ export function appendSample(h: History, kind: string, s: Sample, now: number): 
   return { ...h, [kind]: [...list, s].slice(-3000) }
 }
 
+/** How long a reading may stand without a sample before the ticker records it again. */
+export const HEARTBEAT_MS = 10 * 60_000
+
+/**
+ * A sample for every window whose last one is `every` old or more.
+ *
+ * Readings only arrive when a window moves, so an hour at a steady value
+ * left no sample and its sparkline bucket read `·`, as if nothing was known.
+ * Returns `h` itself when nothing was due.
+ */
+export function heartbeat(h: History, limits: readonly { kind: string; percentUsed: number }[], now: number, every = HEARTBEAT_MS): History {
+  let out = h
+  for (const l of limits) {
+    const last = out[l.kind]?.at(-1)
+    if (!last || now - last[0] >= every) out = appendSample(out, l.kind, [now, l.percentUsed], now)
+  }
+  return out
+}
+
 const SPARK = '▁▂▃▄▅▆▇█'
 export function spark(values: readonly (number | undefined)[]): string {
   return values

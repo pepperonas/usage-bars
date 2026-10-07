@@ -12,6 +12,7 @@ import {
   barWidth,
   clockTime,
   glide,
+  heartbeat,
   peaks,
   pick,
   quip,
@@ -124,6 +125,16 @@ async function publish($: EngineInterface, mine: readonly Limit[], now: number):
   return merged
 }
 
+/** Record a steady reading again now and then, so the sparklines have no false gaps. */
+async function beat($: EngineInterface, list: readonly Limit[], now: number): Promise<void> {
+  const stored = ((await $.store.get('history').catch(() => undefined)) ?? {}) as History
+  const merged = mergeHistory(stored, await read($, historyA), now)
+  const next = heartbeat(merged, list, now)
+  if (next === merged) return
+  await update($, historyA, () => next)
+  await $.store.set('history', next).catch(() => undefined)
+}
+
 /** How often (in 1 s ticks) a session looks at what the others heard. */
 const SYNC_TICKS = 5
 
@@ -230,6 +241,7 @@ export const register: Register = (on, options) => {
           await apply($, merged, now)
           return
         }
+        if (ticks % 60 === 0) await beat($, list, now)
         const soon = list.some(l => l.resetsAt && Date.parse(l.resetsAt) - now < 3600_000)
         const wiggle = prefs.animation && (prefs.style === 'hourglass' || prefs.style === 'battery')
         if (soon || wiggle || ticks % 30 === 0) $.ui.invalidate('ui.render')

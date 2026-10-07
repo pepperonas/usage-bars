@@ -4,6 +4,15 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project uses
 [Semantic Versioning](https://semver.org/).
 
+## [0.4.2] - 2026-10-07
+
+### Fixed
+- The hover card's 7-day sparkline showed the 5-hour peaks, so a 7-day window at 92 % came with a
+  bar of about 20 %. Each window's sparkline now shows that window's own level.
+- Hours at a steady value read `·` (no data) in the sparklines: a sample was only taken when a window
+  moved. The ticker now records a steady reading again every 10 minutes, and the card counts the
+  current reading as the newest sample.
+
 ## [0.4.1] - 2026-10-07
 
 ### Fixed
