@@ -14,9 +14,9 @@
 
 <h3>👉 <code>/plugin marketplace add pepperonas/usage-bars</code> · <code>/plugin install usage-bars@pepperonas</code> — that's it.</h3>
 
-[![version](https://img.shields.io/badge/version-0.4.0-7B4DFF?style=for-the-badge&logo=anthropic&logoColor=white)](CHANGELOG.md)
-[![node tests](https://img.shields.io/badge/node%20tests-60-2E9E5B?style=for-the-badge&logo=nodedotjs&logoColor=white)](tests)
-[![engine tests](https://img.shields.io/badge/engine%20tests-35-2E9E5B?style=for-the-badge&logo=anthropic&logoColor=white)](hooks)
+[![version](https://img.shields.io/badge/version-0.4.1-7B4DFF?style=for-the-badge&logo=anthropic&logoColor=white)](CHANGELOG.md)
+[![node tests](https://img.shields.io/badge/node%20tests-70-2E9E5B?style=for-the-badge&logo=nodedotjs&logoColor=white)](tests)
+[![engine tests](https://img.shields.io/badge/engine%20tests-40-2E9E5B?style=for-the-badge&logo=anthropic&logoColor=white)](hooks)
 [![lines of code](https://img.shields.io/badge/lines%20of%20code-0.9k-4B6BDF?style=for-the-badge&logo=typescript&logoColor=white)](hooks)
 
 [![CI](https://img.shields.io/github/actions/workflow/status/pepperonas/usage-bars/ci.yml?branch=main&label=CI&logo=github)](https://github.com/pepperonas/usage-bars/actions/workflows/ci.yml)
@@ -92,6 +92,7 @@
 - **Projection** — from the samples of the current window the mod computes your burn rate; if you'd run dry before the reset you get `⚠ empty ~16:40`. Silent when you'll make it.
 - **Seconds countdown** — `↻ 2h13m`, and in the last hour `↻ 12m41s`.
 - **Reset, even when idle** — the numbers only change when Claude Code gets an answer. If the window resets while you're away, the mod notices from the reset time, drains the bar to 0 and sparkles: `refuelled ✨`.
+- **Every session shows the same figures** — a session only hears about the limits from its own answers, so an idle one would keep showing old numbers, or zero a window another session already uses. Each session hands what it hears to the others through the mod's store, and every session looks there every 5 seconds.
 - **100 % gets a quip** — `☕ Coffee break – back in 1h12m`, one of seven, stable per window.
 - **Toasts** at 50 / 80 / 90 / 100 %, once per window (remembered across sessions), with an optional chime at 90 % and on reset.
 - **Six styles** — `bars`, `pacman` (a ghost chases Pac-Man from 90 %), `beer`, `tank`, `battery` (⚡ flashes when nearly empty), `hourglass`.
@@ -189,11 +190,13 @@ The defaults live in `/config` under **usage-bars**:
                           a whole point)      toast · history        motion      + the bars line
                                                                      deltas
  1 s ticker ──────────► reset passed? ──► zero it + sparkle          party
+ every 5 s ───────────► other sessions newer? ──► take them over
                        last hour?     ──► redraw every second        history ──► $.store (8 days)
  animation ───────────► 30 fps while something moves, then stops
 ```
 
-- **Source of truth.** `session.start` reads `$.session.usage()`; after that, `session.measure` pushes new figures whenever a window moves by a whole point. Nothing is polled.
+- **Source of truth.** `session.start` reads `$.session.usage()`; after that, `session.measure` pushes new figures whenever a window moves by a whole point. The Claude API is never polled.
+- **Shared between sessions.** Each fresh reading is merged into `latest` in `$.store` (one file for all sessions, read from disk on every get), and each session merges `latest` back every 5 s and at its start. The merge needs no timestamps, so a stale session can't pull the figures back: a window whose reset passed reads 0, a later reset time is a later window and wins, and within one window the higher percent wins (usage only grows until the reset). The history is merged the same way instead of overwritten.
 - **Drawing.** A `ui.render` hook on the `PromptHint` component returns the engine's own hint line *plus* one row — the shortcuts and pills keep working.
 - **Pace.** `elapsed = 1 − (resetsAt − now) / window`; the mark sits at that share of the bar, and `used / elapsed` picks the face.
 - **Projection.** Burn rate = rise since the first sample *inside the current window* ÷ time; it needs 10 minutes of samples and a rising value. Samples from the previous window never count.
@@ -211,6 +214,7 @@ usage-bars makes **no network request**, reads **no credentials** and writes onl
 | [`hooks/register.tsx`](hooks/register.tsx) | The mod: hooks, state, ticker, animation loop, `/usage-bars` |
 | [`hooks/row.ts`](hooks/row.ts) | Pure: one window's segment of the line, and the hover card |
 | [`hooks/styles.ts`](hooks/styles.ts) | Pure: the six styles, gradient, sparkle |
+| [`hooks/share.ts`](hooks/share.ts) | Pure: merging the readings and history of concurrent sessions |
 | [`hooks/format.ts`](hooks/format.ts) | Pure: countdown, clock, pace, face, burn rate, projection, history |
 | [`hooks/i18n.ts`](hooks/i18n.ts) | English and German strings |
 | [`types/index.d.ts`](types/index.d.ts) | The state contract (`PluginState['usage-bars']`) |
@@ -225,7 +229,7 @@ There are two suites, and the split is deliberate.
 
 **Node suite** — `tests/*.spec.ts`, plain `node:test`, no Claude Code needed; this is what CI runs. It covers the pure logic (countdown, pace, projection, history, every style at every value, the row in every state, both languages) and **drift guards** that hold this README to the code: the version badge to `plugin.json` and `package.json`, the test-count badges to the real number of tests, every style and command to the docs, every `/config` field to the table above, the CHANGELOG to the version, the marketplace entry to the manifest, and that no lockfile ships (Claude Code would install the dev tools for every user).
 
-**Engine suite** — `hooks/*.test.ts(x)`, run by `claude plugin test .` against Claude Code's own engine: the line is drawn on the `terminal` *and* `desktop` surfaces, a measure makes the bar glide and the delta flash and fade, a threshold toasts exactly once, an idle reset drops to 0 with a party, `/usage-bars` switches mode, style, language and flags, and settings survive a new session.
+**Engine suite** — `hooks/*.test.ts(x)`, run by `claude plugin test .` against Claude Code's own engine: the line is drawn on the `terminal` *and* `desktop` surfaces, a measure makes the bar glide and the delta flash and fade, a threshold toasts exactly once, an idle reset drops to 0 with a party, an idle session takes over what another session published (and a stale one never pulls it back), `/usage-bars` switches mode, style, language and flags, and settings survive a new session.
 
 **Every new test is mutated once.** A test that has never been seen red is not an assurance. So each guarded behaviour gets its bug put back (reset detection off, threshold check removed, delta dropped, glide skipped, projection hidden, settings not stored, ease-out removed) and the suite must go red — seven of seven did.
 
@@ -255,6 +259,7 @@ npm run screenshots      # re-render docs/ (needs `npx playwright install chromi
 
 The full history is in [CHANGELOG.md](CHANGELOG.md) ([Keep a Changelog](https://keepachangelog.com/en/1.1.0/)).
 
+- **0.4.1** — every session shows the same, current figures; an idle one no longer shows old numbers or a 0 % window.
 - **0.4.0** — typing `/usage-bars ` lists what may follow, under the prompt.
 - **0.3.3** — ready for the Claude plugin directory: a listing icon, and `/config` fields the directory accepts.
 - **0.3.2** — installs no dev tools for users (no lockfile in the plugin root).

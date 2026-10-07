@@ -1,6 +1,6 @@
 {
   "name": "usage-bars",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "private": true,
   "description": "Claude Code mod: your 5-hour and 7-day usage limits as animated bars under the prompt",
   "type": "module",

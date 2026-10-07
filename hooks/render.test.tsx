@@ -12,9 +12,13 @@ const HINT = {
 type Lim = { kind: string; percentUsed: number; resetsAt?: string }
 
 /** Stand-in for the engine beneath the plugin. Returns the clock and the toasts. */
-function engine(on: any, usage: Lim[] = []) {
+function engine(on: any, usage: Lim[] = [], disk?: Record<string, unknown>) {
   const clock = mock.clock(on)
-  mock.store(on)
+  if (disk) {
+    // The store file every session of the account reads and writes.
+    on('store.get', (_$: any, e: any) => ({ value: structuredClone(disk[e.key]) }))
+    on('store.set', (_$: any, e: any) => ((disk[e.key] = structuredClone(e.value)), { value: undefined }))
+  } else mock.store(on)
   const toasts: string[] = []
   on('ui.render', ($: any, e: any) => {
     const { Text } = $.ui.resolve(e)
@@ -121,6 +125,59 @@ test('a window that resets while idle drops to 0 with a party', async ($, on) =>
   const t = await all(ui)
   expect(t).toContain('0%')
   expect(t).not.toContain('refuelled')
+})
+
+test('a new session starts from what the other sessions heard', async ($, on) => {
+  const disk: Record<string, unknown> = { latest: [{ kind: 'five_hour', percentUsed: 13, resetsAt: iso(H) }, { kind: 'seven_day', percentUsed: 91, resetsAt: iso(80 * H) }] }
+  engine(on, [], disk)
+  await start($)
+  const t = await all(await mount($, 'terminal'))
+  expect(t).toContain('13%')
+  expect(t).toContain('91%')
+})
+
+test('an idle session follows the readings another session publishes', async ($, on) => {
+  const disk: Record<string, unknown> = {}
+  const { clock } = engine(on, [{ kind: 'five_hour', percentUsed: 40, resetsAt: iso(2000) }, { kind: 'seven_day', percentUsed: 85, resetsAt: iso(80 * H) }], disk)
+  await start($)
+  const ui = await mount($, 'terminal')
+  expect(await all(ui)).toContain('85%')
+  // This session's 5h window ends; another session already works in the next one.
+  disk.latest = [{ kind: 'five_hour', percentUsed: 13, resetsAt: iso(5 * H) }, { kind: 'seven_day', percentUsed: 91, resetsAt: iso(80 * H) }]
+  await clock.advance(6000)
+  await clock.advance(5000)
+  const t = await all(ui)
+  expect(t).toContain('13%')
+  expect(t).toContain('91%')
+  expect(t).not.toContain(' 0%')
+})
+
+test('a stale reading never pulls the shared figures back', async ($, on) => {
+  const disk: Record<string, unknown> = { latest: [{ kind: 'seven_day', percentUsed: 91, resetsAt: iso(80 * H) }] }
+  engine(on, [], disk)
+  await start($)
+  await measure($, [{ kind: 'seven_day', percentUsed: 85, resetsAt: iso(80 * H) }])
+  expect(await all(await mount($, 'terminal'))).toContain('91%')
+  expect(disk.latest).toEqual([{ kind: 'seven_day', percentUsed: 91, resetsAt: iso(80 * H) }])
+})
+
+test('a fresh reading is published for the other sessions', async ($, on) => {
+  const disk: Record<string, unknown> = {}
+  engine(on, [], disk)
+  await start($)
+  await measure($, [{ kind: 'five_hour', percentUsed: 20, resetsAt: iso(H) }])
+  expect(disk.latest).toEqual([{ kind: 'five_hour', percentUsed: 20, resetsAt: iso(H) }])
+  expect((disk.history as any).five_hour.length).toBe(1)
+})
+
+test('the shared history keeps the samples other sessions recorded', async ($, on) => {
+  const disk: Record<string, unknown> = {}
+  engine(on, [], disk)
+  await start($)
+  // written by another session while this one runs
+  disk.history = { five_hour: [[-60_000, 10]] }
+  await measure($, [{ kind: 'five_hour', percentUsed: 20, resetsAt: iso(H) }])
+  expect((disk.history as any).five_hour).toEqual([[-60_000, 10], [0, 20]])
 })
 
 test('at 100 % a quip replaces the bar', async ($, on) => {

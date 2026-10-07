@@ -26,6 +26,7 @@ import type { Seg } from './styles'
 import { detailText, label, rowSegs } from './row'
 import { LANGS, T, num1 } from './i18n'
 import { complete, isOurs } from './complete'
+import { asLimits, mergeHistory, mergeLimits, sameLimits } from './share'
 
 const limitsA = atom({ plugin: 'usage-bars', key: 'limits' } as const, [] as Limit[])
 const motionA = atom({ plugin: 'usage-bars', key: 'motion' } as const, {} as Record<string, Motion>)
@@ -110,6 +111,22 @@ function animate($: EngineInterface, now: number, ms: number): void {
   })
 }
 
+/** Readings in the store, written by any session; nothing when unreadable. */
+async function shared($: EngineInterface): Promise<Limit[]> {
+  return asLimits(await $.store.get('latest').catch(() => undefined))
+}
+
+/** Hand this session's fresh readings to the others; returns what holds now. */
+async function publish($: EngineInterface, mine: readonly Limit[], now: number): Promise<Limit[]> {
+  const stored = await shared($)
+  const merged = mergeLimits(stored, mine, now)
+  if (!sameLimits(stored, merged)) await $.store.set('latest', merged).catch(() => undefined)
+  return merged
+}
+
+/** How often (in 1 s ticks) a session looks at what the others heard. */
+const SYNC_TICKS = 5
+
 /** New readings in: glide, delta, party, thresholds, history. */
 async function apply($: EngineInterface, next: readonly Limit[], now: number): Promise<void> {
   const old = await read($, limitsA)
@@ -117,7 +134,8 @@ async function apply($: EngineInterface, next: readonly Limit[], now: number): P
   const motion = { ...(await read($, motionA)) }
   const deltas = { ...(await read($, deltasA)) }
   const party = { ...(await read($, partyA)) }
-  let history = await read($, historyA)
+  // Fold in what the other sessions recorded, so the shared history keeps everyone's samples.
+  let history = mergeHistory(((await $.store.get('history').catch(() => undefined)) ?? {}) as History, await read($, historyA), now)
   const warned = ((await $.store.get('warned')) ?? {}) as Record<string, number>
   let warnedChanged = false
   let sound: string | undefined
@@ -185,7 +203,9 @@ export const register: Register = (on, options) => {
     const history = ((await $.store.get('history')) ?? {}) as History
     await update($, historyA, () => history)
     const usage = await $.session.usage()
-    await update($, limitsA, () => keep(usage.rateLimits))
+    // A new session has no response yet: start from what the others heard.
+    const start = mergeLimits(keep(usage.rateLimits), await shared($), await $.clock.now())
+    await update($, limitsA, () => start)
 
     await $.command.register({
       name: 'usage-bars',
@@ -202,10 +222,12 @@ export const register: Register = (on, options) => {
         const now = await $.clock.now()
         const list = await read($, limitsA)
         const prefs = await read($, prefsA)
-        const expired = list.filter(l => l.resetsAt && Date.parse(l.resetsAt) <= now && l.percentUsed > 0)
-        if (expired.length) {
-          // The window reset while nothing asked the API: zero it ourselves.
-          await apply($, list.map(l => (expired.includes(l) ? { kind: l.kind, percentUsed: 0 } : l)), now)
+        // Another session heard newer figures, or a window ended while nothing
+        // asked the API: either way the bars move without a response of our own.
+        const others = ticks % SYNC_TICKS === 0 ? await shared($) : []
+        const merged = mergeLimits(list, others, now)
+        if (!sameLimits(merged, list)) {
+          await apply($, merged, now)
           return
         }
         const soon = list.some(l => l.resetsAt && Date.parse(l.resetsAt) - now < 3600_000)
@@ -217,7 +239,10 @@ export const register: Register = (on, options) => {
   })
 
   on('session.measure', async ($, e, next) => {
-    if (e.changed.includes('rateLimits')) await apply($, keep(e.rateLimits), await $.clock.now())
+    if (e.changed.includes('rateLimits')) {
+      const now = await $.clock.now()
+      await apply($, await publish($, keep(e.rateLimits), now), now)
+    }
     return next(e)
   })
 

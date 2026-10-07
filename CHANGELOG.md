@@ -4,6 +4,19 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project uses
 [Semantic Versioning](https://semver.org/).
 
+## [0.4.1] - 2026-10-07
+
+### Fixed
+- The bars no longer go stale in a session that sits idle. A session only learns the limits from its
+  own API answers, so with several open, the quiet one kept its old figures (7d 85 % while another
+  showed 91 %), and when its 5-hour window passed its reset time it showed 0 % with no countdown,
+  although another session was already 13 % into the next window. Every session now hands what it
+  hears to the others through the mod's store and takes over what they heard, every 5 seconds and
+  at its start. The merge is safe against stale input: an ended window reads 0, a later reset time
+  wins, and within one window the higher percent wins.
+- The 8-day history in the store is merged instead of overwritten, so concurrent sessions no longer
+  drop each other's samples.
+
 ## [0.4.0] - 2026-10-05
 
 ### Added
