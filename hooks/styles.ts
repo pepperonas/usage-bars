@@ -86,14 +86,22 @@ function pacman(p: number, width: number, ctx: StyleCtx): Seg[] {
   return merge(segs)
 }
 
-/** Beer, battery, tank and hourglass show what is LEFT. */
+/** Traffic-light colour of a fill by what is used, as the percent next to it. */
+const usedColor = (p: number) => (p >= 80 ? RED : p >= 50 ? YELLOW : GREEN)
+
+/*
+ * Every style reads like `bars`: the fill from the left is what is used, the
+ * empty track behind it is what is left, and the pace mark sits at the same cell.
+ */
+
+/** The glass fills with what you drank; the foam rides on top. */
 function beer(p: number, width: number, ctx: StyleCtx): Seg[] {
-  const left = Math.round(cover(100 - p, width))
-  const mark = markCell(ctx.pace === undefined ? undefined : 1 - ctx.pace, width)
+  const used = Math.round(cover(p, width))
+  const mark = markCell(ctx.pace, width)
   const segs: Seg[] = [{ text: '🍺' }, { text: '▕', dim: true }]
   for (let i = 0; i < width; i++) {
-    if (i < left - 1) segs.push(i === mark ? tick('#e3a008') : { text: '█', color: '#e3a008' })
-    else if (i === left - 1) segs.push({ text: '▓', color: '#f5f0e1' })
+    if (i < used - 1) segs.push(i === mark ? tick('#e3a008') : { text: '█', color: '#e3a008' })
+    else if (i === used - 1) segs.push({ text: '▓', color: '#f5f0e1' })
     else if (i === mark) segs.push({ text: '│', color: MARK })
     else segs.push({ text: '░', dim: true })
   }
@@ -101,11 +109,12 @@ function beer(p: number, width: number, ctx: StyleCtx): Seg[] {
   return merge(segs)
 }
 
+/** Drained charge from the left; ⚡ flashes from 90 % used. */
 function battery(p: number, width: number, ctx: StyleCtx): Seg[] {
-  const left = 100 - clamp(p, 0, 100)
-  const n = Math.round(cover(left, width))
-  const col = left <= 20 ? RED : left <= 50 ? YELLOW : GREEN
-  const mark = markCell(ctx.pace === undefined ? undefined : 1 - ctx.pace, width)
+  const used = clamp(p, 0, 100)
+  const n = Math.round(cover(used, width))
+  const col = usedColor(used)
+  const mark = markCell(ctx.pace, width)
   const segs: Seg[] = [{ text: '▕', dim: true }]
   for (let i = 0; i < width; i++) {
     if (i < n) segs.push(i === mark ? tick(col) : { text: '█', color: col })
@@ -113,32 +122,33 @@ function battery(p: number, width: number, ctx: StyleCtx): Seg[] {
     else segs.push({ text: '░', dim: true })
   }
   segs.push({ text: '▏', dim: true }, { text: '▌', dim: true })
-  if (left <= 10 && ctx.second % 2 === 0) segs.push({ text: '⚡', color: YELLOW })
+  if (used >= 90 && ctx.second % 2 === 0) segs.push({ text: '⚡', color: YELLOW })
   return merge(segs)
 }
 
+/** Burnt fuel ▮ from the left, what is left ▯ behind it. */
 function tank(p: number, width: number, ctx: StyleCtx): Seg[] {
   const cells = Math.max(4, Math.floor(width / 2))
-  const left = 100 - clamp(p, 0, 100)
-  const n = Math.round((left / 100) * cells)
-  const col = left <= 20 ? RED : left <= 50 ? YELLOW : GREEN
-  const mark = markCell(ctx.pace === undefined ? undefined : 1 - ctx.pace, cells)
-  const segs: Seg[] = [{ text: '⛽E ', dim: true }]
+  const used = clamp(p, 0, 100)
+  const n = Math.round((used / 100) * cells)
+  const col = usedColor(used)
+  const mark = markCell(ctx.pace, cells)
+  const segs: Seg[] = [{ text: '⛽ ', dim: true }]
   for (let i = 0; i < cells; i++) {
     const glyph = i < n ? '▮' : '▯'
     segs.push(i === mark ? { text: glyph, color: TICK, bold: true } : i < n ? { text: glyph, color: col } : { text: glyph, dim: true })
   }
-  segs.push({ text: ' F', dim: true })
   return merge(segs)
 }
 
+/** Sand that has run through ⣿ from the left, sand still to come ⣀ behind it. */
 function hourglass(p: number, width: number, ctx: StyleCtx): Seg[] {
-  const left = Math.round(cover(100 - p, width))
-  const mark = markCell(ctx.pace === undefined ? undefined : 1 - ctx.pace, width)
+  const used = Math.round(cover(p, width))
+  const mark = markCell(ctx.pace, width)
   const segs: Seg[] = [{ text: ctx.second % 2 === 0 ? '⏳' : '⌛' }]
   for (let i = 0; i < width; i++) {
     if (i === mark) segs.push({ text: '│', color: MARK })
-    else if (i < left) segs.push({ text: '⣿', color: '#d4a373' })
+    else if (i < used) segs.push({ text: '⣿', color: '#d4a373' })
     else segs.push({ text: '⣀', dim: true })
   }
   return merge(segs)

@@ -14,8 +14,8 @@
 
 <h3>👉 <code>/plugin marketplace add pepperonas/usage-bars</code> · <code>/plugin install usage-bars@pepperonas</code> — that's it.</h3>
 
-[![version](https://img.shields.io/badge/version-0.4.2-7B4DFF?style=for-the-badge&logo=anthropic&logoColor=white)](CHANGELOG.md)
-[![node tests](https://img.shields.io/badge/node%20tests-73-2E9E5B?style=for-the-badge&logo=nodedotjs&logoColor=white)](tests)
+[![version](https://img.shields.io/badge/version-0.5.0-7B4DFF?style=for-the-badge&logo=anthropic&logoColor=white)](CHANGELOG.md)
+[![node tests](https://img.shields.io/badge/node%20tests-75-2E9E5B?style=for-the-badge&logo=nodedotjs&logoColor=white)](tests)
 [![engine tests](https://img.shields.io/badge/engine%20tests-41-2E9E5B?style=for-the-badge&logo=anthropic&logoColor=white)](hooks)
 [![lines of code](https://img.shields.io/badge/lines%20of%20code-0.9k-4B6BDF?style=for-the-badge&logo=typescript&logoColor=white)](hooks)
 
@@ -72,7 +72,7 @@
 
 <img src="docs/styles.png" alt="The six styles: bars, pacman, beer, tank, battery, hourglass" width="100%">
 
-<sub><code>bars</code> and <code>pacman</code> show what you <b>used</b>; <code>beer</code>, <code>tank</code>, <code>battery</code> and <code>hourglass</code> show what is <b>left</b>. Switch with <code>/usage-bars style &lt;name&gt;</code> — or just <code>/usage-bars pacman</code>.</sub>
+<sub>Every style reads the same way: the fill from the left is what you <b>used</b> — the same number as the percent next to it — and the empty part behind it is what is <b>left</b>. The pace mark sits in the same place in every style. Switch with <code>/usage-bars style &lt;name&gt;</code> — or just <code>/usage-bars pacman</code>.</sub>
 
 ### Hover card
 
@@ -95,7 +95,7 @@
 - **Every session shows the same figures** — a session only hears about the limits from its own answers, so an idle one would keep showing old numbers, or zero a window another session already uses. Each session hands what it hears to the others through the mod's store, and every session looks there every 5 seconds.
 - **100 % gets a quip** — `☕ Coffee break – back in 1h12m`, one of seven, stable per window.
 - **Toasts** at 50 / 80 / 90 / 100 %, once per window (remembered across sessions), with an optional chime at 90 % and on reset.
-- **Six styles** — `bars`, `pacman` (a ghost chases Pac-Man from 90 %), `beer`, `tank`, `battery` (⚡ flashes when nearly empty), `hourglass`.
+- **Six styles** — `bars`, `pacman` (a ghost chases Pac-Man from 90 %), `beer`, `tank`, `battery` (⚡ flashes from 90 % used), `hourglass`.
 - **Compact mode** — `5h 42% 😎 ↻2h13m   7d 67% 😬 ↻3d 4h`; automatic below 72 columns.
 - **Stats** — `/usage-bars stats`: burn rate, projection, sparklines of your 5-hour peaks over 24 h and 7 days, your record.
 - **English and German** — `/usage-bars lang de`.
@@ -259,6 +259,7 @@ npm run screenshots      # re-render docs/ (needs `npx playwright install chromi
 
 The full history is in [CHANGELOG.md](CHANGELOG.md) ([Keep a Changelog](https://keepachangelog.com/en/1.1.0/)).
 
+- **0.5.0** — every style fills with what is used, like `bars`; what is left is the empty part behind it.
 - **0.4.2** — the 7-day sparkline shows the 7-day level, and steady hours no longer show as gaps.
 - **0.4.1** — every session shows the same, current figures; an idle one no longer shows old numbers or a 0 % window.
 - **0.4.0** — typing `/usage-bars ` lists what may follow, under the prompt.

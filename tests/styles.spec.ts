@@ -21,7 +21,7 @@ test('bars: the pace mark sits right after where even use would end', () => {
 
 test('the pace mark inside a filled bar is a thin line on the fill, not a block', () => {
   for (const style of ['bars', 'battery', 'beer'] as const) {
-    const p = style === 'bars' ? 90 : 10 // the mark lands inside the filled part
+    const p = 90 // the mark lands inside the filled part
     const mark = drawStyle(style, p, 10, { ...ctx, pace: 0.5 }).find(s => s.text === '│')
     assert.ok(mark, `${style}: no mark`)
     assert.ok(mark.bg, `${style}: the mark has no fill behind it`)
@@ -45,11 +45,31 @@ test('pacman eats up to the value; a ghost chases it from 90 %', () => {
   assert.ok(text(drawStyle('pacman', 50, 10, { ...ctx, chomp: true })).includes('●'))
 })
 
-test('battery, beer, tank and hourglass show what is left', () => {
-  assert.equal((text(drawStyle('battery', 30, 10, ctx)).match(/█/g) ?? []).length, 7)
-  assert.equal(text(drawStyle('tank', 50, 20, ctx)), '⛽E ▮▮▮▮▮▯▯▯▯▯ F')
-  assert.ok(text(drawStyle('beer', 0, 4, ctx)).startsWith('🍺'))
-  assert.equal((text(drawStyle('hourglass', 75, 8, ctx)).match(/⣿/g) ?? []).length, 2)
+test('every style fills with what is used, what is left stays behind it', () => {
+  assert.equal(text(drawStyle('battery', 30, 10, ctx)), '▕███░░░░░░░▏▌')
+  assert.equal(text(drawStyle('tank', 30, 20, ctx)), '⛽ ▮▮▮▯▯▯▯▯▯▯')
+  assert.equal(text(drawStyle('beer', 25, 8, ctx)), '🍺▕█▓░░░░░░▏')
+  assert.equal(text(drawStyle('hourglass', 75, 8, ctx)), '⏳⣿⣿⣿⣿⣿⣿⣀⣀')
+})
+
+test('the pace mark sits in the same cell in every style', () => {
+  const prefix: Record<string, number> = { bars: 0, beer: 2, battery: 1, hourglass: 1 }
+  // an uneven pace: a mirrored mark would land somewhere else
+  for (const [style, skip] of Object.entries(prefix)) {
+    const chars = [...text(drawStyle(style as 'bars', 10, 8, { ...ctx, pace: 0.75 }))]
+    assert.equal(chars.indexOf('│') - skip, 6, style)
+  }
+  // tank: 8 cells at width 16, a quarter of the window gone → cell 2, like bars on 8 cells
+  const segs = drawStyle('tank', 10, 16, { ...ctx, pace: 0.25 })
+  const at = segs.findIndex(s => s.bold)
+  const before = segs.slice(0, at).reduce((n, s) => n + [...s.text].length, 0)
+  assert.equal(before - 2, [...text(drawStyle('bars', 10, 8, { ...ctx, pace: 0.25 }))].indexOf('│'))
+})
+
+test('fill colours follow what is used, like the percent next to them', () => {
+  assert.equal(drawStyle('battery', 20, 10, ctx).find(s => s.text.includes('█'))!.color, '#3fb950')
+  assert.equal(drawStyle('battery', 85, 10, ctx).find(s => s.text.includes('█'))!.color, '#f85149')
+  assert.equal(drawStyle('tank', 85, 20, ctx).find(s => s.text.includes('▮'))!.color, '#f85149')
 })
 
 test('the battery flashes ⚡ when almost empty', () => {

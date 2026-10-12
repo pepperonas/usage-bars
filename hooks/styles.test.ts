@@ -19,11 +19,11 @@ describe('styles', () => {
     expect(text(drawStyle('pacman', 92, 12, ctx))).toBe('─────────ᗣ─ᗧ')
     expect(text(drawStyle('pacman', 50, 10, { ...ctx, chomp: true }))).toContain('●')
   })
-  test('battery, beer, tank and hourglass show what is left', async () => {
-    expect((text(drawStyle('battery', 30, 10, ctx)).match(/█/g) ?? []).length).toBe(7)
-    expect(text(drawStyle('tank', 50, 20, ctx))).toBe('⛽E ▮▮▮▮▮▯▯▯▯▯ F')
-    expect(text(drawStyle('beer', 0, 4, ctx))).toContain('🍺')
-    expect((text(drawStyle('hourglass', 75, 8, ctx)).match(/⣿/g) ?? []).length).toBe(2)
+  test('every style fills with what is used, what is left behind it', async () => {
+    expect(text(drawStyle('battery', 30, 10, ctx))).toBe('▕███░░░░░░░▏▌')
+    expect(text(drawStyle('tank', 30, 20, ctx))).toBe('⛽ ▮▮▮▯▯▯▯▯▯▯')
+    expect(text(drawStyle('beer', 25, 8, ctx))).toBe('🍺▕█▓░░░░░░▏')
+    expect(text(drawStyle('hourglass', 75, 8, ctx))).toBe('⏳⣿⣿⣿⣿⣿⣿⣀⣀')
   })
   test('every style draws at every value without throwing', async () => {
     for (const s of STYLES) for (const p of [0, 1, 49.5, 99, 100, 130]) expect(text(drawStyle(s, p, 12, { ...ctx, pace: 0.3 })).length > 0).toBe(true)

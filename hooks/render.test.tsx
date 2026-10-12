@@ -237,7 +237,7 @@ test('prefs survive a new session through the store', async ($, on) => {
   await start($)
   await measure($, [{ kind: 'five_hour', percentUsed: 42 }])
   const ui = await mount($, 'terminal')
-  expect(await all(ui)).toContain('⛽E')
+  expect(await all(ui)).toContain('⛽ ')
 })
 
 test('/usage-bars demo plays the animation', async ($, on) => {

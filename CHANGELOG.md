@@ -4,6 +4,18 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project uses
 [Semantic Versioning](https://semver.org/).
 
+## [0.5.0] - 2026-10-12
+
+### Changed
+- Every style now reads like `bars`: the fill from the left is what is used, the empty part behind
+  it is what is left. `beer`, `tank`, `battery` and `hourglass` used to fill with what was left,
+  while the percent next to them showed what was used, and their pace mark was mirrored — a nearly
+  full beer glass stood next to "10%". The glass now fills with what you drank, the battery drains
+  from the left, the tank counts burnt fuel and the sand runs through from the left; the pace mark
+  sits in the same cell as in `bars`, and fill colours follow the used percent.
+- `tank` lost its `E … F` labels, which no longer matched the direction.
+- `battery` flashes ⚡ from 90 % used (the same threshold as before, counted the other way).
+
 ## [0.4.2] - 2026-10-07
 
 ### Fixed
