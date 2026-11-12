@@ -1,5 +1,7 @@
 import { expect, mock, test } from 'claude-code/testing'
 
+import { desktopSegs } from './register'
+
 const H = 3600_000
 const iso = (ms: number) => new Date(ms).toISOString()
 
@@ -8,6 +10,16 @@ const HINT = {
   component: 'PromptHint',
   props: { isDraft: false, isWorking: false, hint: '? for shortcuts' },
 } as const
+
+// The desktop app draws no line under the prompt, so there the bars go in the
+// band above it (local fork).
+const BAND = {
+  plugin: 'usage-bars',
+  component: 'AbovePrompt',
+  props: { hasSurvey: false, isCollapsed: false, isWorking: false, maxRows: 20, bodyColumns: 120, scroll: { offset: 0, bodyRows: 20 }, view: {} },
+} as const
+// What the engine (or another plugin) draws in each slot beneath this one.
+const KEPT = { terminal: '? for shortcuts', desktop: 'other band' } as const
 
 type Lim = { kind: string; percentUsed: number; resetsAt?: string }
 
@@ -22,7 +34,7 @@ function engine(on: any, usage: Lim[] = [], disk?: Record<string, unknown>) {
   const toasts: string[] = []
   on('ui.render', ($: any, e: any) => {
     const { Text } = $.ui.resolve(e)
-    return <Text dimColor>{e.props.hint}</Text>
+    return <Text dimColor>{e.component === 'AbovePrompt' ? KEPT.desktop : e.props.hint}</Text>
   })
   on('session.measure', (_$: any, e: any) => ({ changed: e.changed }))
   on('session.start', (_$: any, e: any) => ({ cwd: e.cwd }))
@@ -40,14 +52,14 @@ const measure = ($: any, rateLimits: Lim[]) =>
   $.session.measure({ context: {}, rateLimits, changed: ['rateLimits'] })
 const start = ($: any) => $.session.start({ cwd: '/', surface: 'terminal', isInteractive: true })
 const mount = ($: any, surface: 'terminal' | 'desktop', columns = 120): Promise<any> =>
-  $.ui.mount({ ...HINT, surface, viewport: { columns, rows: 40 } })
+  $.ui.mount({ ...(surface === 'desktop' ? BAND : HINT), surface, viewport: { columns, rows: 40 } })
 const all = async (ui: any) => (await ui.findAll({ type: 'Text' })).map((t: any) => t.text).join('|')
 
 for (const surface of ['terminal', 'desktop'] as const) {
   test(`no data: engine line only (${surface})`, async ($, on) => {
     engine(on)
     const ui = await mount($, surface)
-    expect(await ui.find({ text: '? for shortcuts' })).toBeDefined()
+    expect(await ui.find({ text: KEPT[surface] })).toBeDefined()
     expect(await ui.find({ text: /5h/ })).toBeUndefined()
   })
 
@@ -59,7 +71,7 @@ for (const surface of ['terminal', 'desktop'] as const) {
     ])
     const ui = await mount($, surface)
     const t = await all(ui)
-    expect(t).toContain('? for shortcuts')
+    expect(t).toContain(KEPT[surface])
     expect(t).toContain('5h ')
     expect(t).toContain('7d ')
     expect(t).toContain('42%')
@@ -293,7 +305,7 @@ for (const surface of ['terminal', 'desktop'] as const) {
     expect(t).toContain('st|ats')
     expect(t).toContain('st|yle')
     expect(t).not.toContain('42%')
-    expect(t).toContain('? for shortcuts')
+    expect(t).toContain(KEPT[surface])
 
     draft = '/usage-bars stats'
     expect(await all(await mount($, surface))).toContain('rate, projection, history, record')
@@ -313,4 +325,62 @@ test('the list shows even with the line off and before any data, in the chosen l
   const t = await all(await mount($, 'terminal'))
   expect(t).toContain('sta|ts')
   expect(t).toContain('Rate, Hochrechnung')
+})
+
+test('one slot per surface: under the prompt in the terminal, above it on desktop', async ($, on) => {
+  engine(on)
+  await measure($, [{ kind: 'five_hour', percentUsed: 42 }])
+  const other = async (m: object, surface: string) =>
+    all(await $.ui.mount({ ...m, surface, viewport: { columns: 120, rows: 40 } }))
+  // Desktop never raises PromptHint, but if it ever did, no second copy appears.
+  expect(await other(HINT, 'desktop')).not.toContain('42%')
+  // The terminal keeps its band for others; the bars stay under the prompt.
+  expect(await other(BAND, 'terminal')).not.toContain('42%')
+  expect(await all(await mount($, 'desktop'))).toContain('42%')
+  expect(await all(await mount($, 'terminal'))).toContain('42%')
+})
+
+test('the desktop band yields to a survey', async ($, on) => {
+  engine(on)
+  await measure($, [{ kind: 'five_hour', percentUsed: 42 }])
+  const t = await all(await $.ui.mount({ ...BAND, props: { ...BAND.props, hasSurvey: true }, surface: 'desktop', viewport: { columns: 120, rows: 40 } }))
+  expect(t).not.toContain('42%')
+  expect(t).toContain(KEPT.desktop)
+})
+
+test('desktop: solid track instead of light shade, shorter bars, row wraps', async ($, on) => {
+  engine(on)
+  await measure($, [
+    { kind: 'five_hour', percentUsed: 42, resetsAt: iso((2 * 60 + 13) * 60_000) },
+    { kind: 'seven_day', percentUsed: 30, resetsAt: iso(34 * H) },
+  ])
+  const desk = await all(await mount($, 'desktop', 200))
+  expect(desk).not.toContain('░')
+  expect(desk).toContain('↻ 2h13m')
+  expect(desk).toContain('↻ 1d 10h')
+  const term = await all(await mount($, 'terminal', 200))
+  expect(term).toContain('░')
+  // Bar cells (filled, partial, mark, track) between the 5h and 7d labels.
+  const barCells = (t: string) => [...(t.split('5h')[1] ?? '').split('7d')[0]!.replace(/[^█▏▎▍▌▋▊▉░│]/g, '')].length
+  expect(barCells(desk)).toBeLessThanOrEqual(12)
+  expect(barCells(term)).toBeGreaterThan(12)
+})
+
+test('desktop rounds partial cells: filled from half, track below; no eighths left', () => {
+  const G = '#2e9e5b'
+  const out = desktopSegs([
+    { text: '██▌', color: G },
+    { text: '▎', color: '#d29922' },
+    { text: '░░', dim: true },
+    { text: '│', color: '#fff' },
+  ])
+  const text = out.map(s => s.text).join('')
+  expect(text).toBe('██████│')
+  expect(text).not.toMatch(/[▏▎▍▌▋▊▉░]/)
+  // '██▌' stays one green run of three; '▎' and '░░' become one track run of three.
+  expect(out[0]).toEqual({ text: '███', color: G })
+  expect(out[1]?.text).toBe('███')
+  expect(out[1]?.color).toBe('#3d434b')
+  // Untouched segments pass through as they were.
+  expect(desktopSegs([{ text: ' 42%', color: G }])).toEqual([{ text: ' 42%', color: G }])
 })

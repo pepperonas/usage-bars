@@ -4,6 +4,18 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project uses
 [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Fixed
+- The bars now show in the Claude desktop app's Code tab. The desktop app never asks for the line
+  under the prompt (`PromptHint`), so the mod drew nothing there; on the `desktop` surface it now
+  draws in the band above the prompt (`AbovePrompt`) instead, and yields to a survey there. The
+  terminal keeps the line under the prompt, and each surface gets exactly one copy.
+- Desktop rendering: its text isn't laid out in terminal cells, so there the empty track is drawn
+  as solid dim blocks (the light shade `░` showed as hollow boxes), a partial cell rounds to a
+  whole one (the eighths left a gap), bars are capped at 12 cells and the row wraps instead of
+  cutting off the 7-day countdown.
+
 ## [0.5.0] - 2026-10-12
 
 ### Changed

@@ -16,7 +16,7 @@
 
 [![version](https://img.shields.io/badge/version-0.5.0-7B4DFF?style=for-the-badge&logo=anthropic&logoColor=white)](CHANGELOG.md)
 [![node tests](https://img.shields.io/badge/node%20tests-75-2E9E5B?style=for-the-badge&logo=nodedotjs&logoColor=white)](tests)
-[![engine tests](https://img.shields.io/badge/engine%20tests-41-2E9E5B?style=for-the-badge&logo=anthropic&logoColor=white)](hooks)
+[![engine tests](https://img.shields.io/badge/engine%20tests-45-2E9E5B?style=for-the-badge&logo=anthropic&logoColor=white)](hooks)
 [![lines of code](https://img.shields.io/badge/lines%20of%20code-0.9k-4B6BDF?style=for-the-badge&logo=typescript&logoColor=white)](hooks)
 
 [![CI](https://img.shields.io/github/actions/workflow/status/pepperonas/usage-bars/ci.yml?branch=main&label=CI&logo=github)](https://github.com/pepperonas/usage-bars/actions/workflows/ci.yml)

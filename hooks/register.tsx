@@ -22,7 +22,7 @@ import {
   spark,
   untilReset,
 } from './format'
-import { STYLES } from './styles'
+import { STYLES, merge } from './styles'
 import type { Seg } from './styles'
 import { detailText, label, rowSegs } from './row'
 import { LANGS, T, num1 } from './i18n'
@@ -206,6 +206,38 @@ async function apply($: EngineInterface, next: readonly Limit[], now: number): P
   else void $.clock.after(DELTA_MS + 50, () => $.ui.invalidate('ui.render'))
 }
 
+// The desktop app's text isn't laid out in terminal cells: the light-shade track
+// ('░') shows as hollow boxes, the partial-cell eighths ('▏'..'▉') draw narrower
+// than a cell and leave a gap, and a 24-cell bar runs long enough to push the 7d
+// countdown off the band. There the track is drawn as solid dim blocks (as the
+// terminal shows it), a partial cell rounds to a whole one (filled from half,
+// track below), the bars are capped shorter, and the row wraps.
+const DESKTOP_TRACK = '#3d434b'
+const DESKTOP_MAX_BAR = 12
+const PARTIAL = '▏▎▍▌▋▊▉'
+const track = (n: number): Seg => ({ text: '█'.repeat(n), color: DESKTOP_TRACK })
+
+export function desktopSegs(segs: Seg[]): Seg[] {
+  const out: Seg[] = []
+  for (const s of segs) {
+    if (/^░+$/.test(s.text)) {
+      out.push(track(s.text.length))
+      continue
+    }
+    if (![...PARTIAL].some(c => s.text.includes(c))) {
+      out.push(s)
+      continue
+    }
+    for (const c of s.text) {
+      const i = PARTIAL.indexOf(c)
+      if (i < 0) out.push({ ...s, text: c })
+      else if (i >= 3) out.push({ ...s, text: '█' })
+      else out.push(track(1))
+    }
+  }
+  return merge(out)
+}
+
 export const register: Register = (on, options) => {
   on('session.start', async ($, e, next) => {
     await update($, prefsA, () => prefsOf(options, undefined))
@@ -368,7 +400,13 @@ export const register: Register = (on, options) => {
     return r
   })
 
-  on('ui.render', { component: 'PromptHint' }, async ($, e, next) => {
+  // The desktop app never raises PromptHint (the line under the prompt), only
+  // AbovePrompt (the band above it). So the bars draw under the prompt in the
+  // terminal and above it in the desktop app: one slot per surface, never both.
+  on('ui.render', { component: ['PromptHint', 'AbovePrompt'] }, async ($, e, next) => {
+    const isBand = e.component === 'AbovePrompt'
+    if (isBand !== (e.surface === 'desktop')) return next(e)
+    if (e.component === 'AbovePrompt' && e.props.hasSurvey) return next(e)
     const prefs = await read($, prefsA)
     // A surface without a prompt box (or a read that fails) just shows the bars.
     const draft = (await $.prompt.read().catch(() => undefined))?.text ?? ''
@@ -400,15 +438,15 @@ export const register: Register = (on, options) => {
 
     const { Box, Text } = $.ui.resolve(e)
     const now = await $.clock.now()
-    const columns = e.viewport?.columns ?? 100
+    const columns = (e.component === 'AbovePrompt' ? e.props.bodyColumns : undefined) ?? e.viewport?.columns ?? 100
     const compact = prefs.mode === 'compact' || columns < COMPACT_BELOW
-    const width = barWidth(columns)
+    const width = isBand ? Math.min(barWidth(columns), DESKTOP_MAX_BAR) : barWidth(columns)
     const motion = await read($, motionA)
     const deltas = await read($, deltasA)
     const party = await read($, partyA)
     const history = await read($, historyA)
     const segsOf = (kind: string): Seg[] =>
-      rowSegs({
+      (isBand ? desktopSegs : (x: Seg[]) => x)(rowSegs({
         limit: pick(list, kind)!,
         prefs,
         now,
@@ -418,7 +456,7 @@ export const register: Register = (on, options) => {
         delta: deltas[kind],
         partyAt: party[kind],
         history,
-      })
+      }))
     const detail = detailText(shown.map(w => pick(list, w.kind)!), history, now, prefs.lang)
 
     const text = (s: Seg, k: string) => (
@@ -430,7 +468,7 @@ export const register: Register = (on, options) => {
     return (
       <Box flexDirection="column">
         {await next(e)}
-        <Box key="usage-bars" flexDirection="row">
+        <Box key="usage-bars" flexDirection="row" flexWrap={isBand ? 'wrap' : undefined}>
           {shown.map((w, i) => (
             <Box key={w.kind} flexDirection="row" marginRight={i < shown.length - 1 ? 3 : 0}>
               {segsOf(w.kind).map((s, j) => text(s, `${w.kind}-${j}`))}
